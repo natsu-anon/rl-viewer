@@ -15,10 +15,10 @@ const float mortarThreshold = 0.1f;
 
 void main()
 {
-	// vec2 offset = PI 
+	vec2 brickCoords = PI * vec2(numCols, numRows) * fragTexCoord;
 	brickCoords = sin(brickCoords);
 	brickCoords = abs(brickCoords);
 	float brick = min(brickCoords.x, brickCoords.y);
-	brick = smoothstep(mortarThreshold - 0.01f, mortarThreshold, brick);
+	brick = step(mortarThreshold, brick);
     finalColor = vec4(brick, brick, brick, 1.0f);
 }

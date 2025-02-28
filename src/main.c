@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <math.h>
 #include "raylib.h"
 #include "rlgl.h"
 #define GLSL_VERSION 330
 
-static void print_usage(void) {
+
+
+void normalize(Vector3 *v)
+{
+	float k = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
+	v->x *= k;
+	v->y *= k;
+	v->z *= k;
+}
+
+void print_usage(void)
+{
 	printf("Usage:\n\n"
 		   "  rl-viewer -m <model-path> [options]\n\n"
 		   "Arguments:\n"
@@ -90,15 +102,41 @@ int main(int argc, char** argv)
 	for (int i = 0; i < model.materialCount; ++i) {
 		model.materials[i].shader = shader;
 	}
+	// for scrolling brick example
+	int tex_loc = GetShaderLocation(shader, "noiseTexture");
+	int time_loc = GetShaderLocation(shader, "rlTime");
+	int cam_loc = GetShaderLocation(shader, "camDir");
+	int light_loc = GetShaderLocation(shader, "lightDir");
+	// "light" setup
+	Vector3 light = { 0.3f, 1.0f, -0.3f };
+	normalize(&light);
+	SetShaderValue(shader, light_loc, &light, SHADER_UNIFORM_VEC3);
+	/* light = */
+	// load noise texture
+	Texture2D noise_texture = LoadTexture("assets/noise.bmp");
+	if (!IsTextureValid(noise_texture)) {
+		perror("Failed to load texture: 'assets/noise.bmp'!\n");
+		goto cleanup_texture;
+	}
 	SetTargetFPS(60);
 	HideCursor();
 	DisableCursor();
     while (!WindowShouldClose())
     {
+		float rl_time = GetTime(); // for brick scrolling
+		Vector3 camera_dir = camera.target;
+		SetShaderValue(shader, time_loc, &rl_time, SHADER_UNIFORM_FLOAT);
+		SetShaderValue(shader, cam_loc, &camera_dir, SHADER_UNIFORM_VEC3);
 		UpdateCamera(&camera, CAMERA_FREE);
         BeginDrawing();
 			ClearBackground((Color){40, 40, 60, 255});
 			BeginMode3D(camera);
+			    // for brick scrolling
+				int tex_slot = 0;
+				rlActiveTextureSlot(tex_slot);
+				rlEnableTexture(noise_texture.id);
+				SetShaderValueTexture(shader, tex_loc, noise_texture);
+			    // vaniglia
 				DrawModel(model, model_pos, 1.0f, WHITE);
 				DrawGrid(10, 1.0f);
 			EndMode3D();
@@ -108,9 +146,12 @@ int main(int argc, char** argv)
 	EnableCursor();
 	ShowCursor();
 	UnloadShader(shader);
+	UnloadTexture(noise_texture);
 	UnloadModel(model);
     CloseWindow();
     return 0;
+cleanup_texture:
+	UnloadTexture(noise_texture);
 cleanup_shader:
 	UnloadShader(shader);
 cleanup_model:

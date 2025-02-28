@@ -9,7 +9,7 @@ SRC := $(wildcard src/*.c)
 default: rl-viewer
 
 test: rl-viewer
-	${CURDIR}/rl-viewer -m assets/suzy.obj -v shaders/vert_default.glsl -f shaders/frag_default.glsl
+	${CURDIR}/rl-viewer -m assets/utah.obj -f shaders/sheen_frag.glsl
 
 rl-viewer: $(SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
