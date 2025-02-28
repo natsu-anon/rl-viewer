@@ -118,3 +118,5 @@ cleanup_model:
 	CloseWindow();
 	return 1;
 }
+
+// I never know if I clone stuff properly so this is what I do
