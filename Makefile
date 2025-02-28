@@ -1,6 +1,10 @@
 CC := clang -std=gnu99
 CFLAGS := -Wall -Wextra -ggdb -O0
 LDFLAGS := -lraylib
+ifneq ($(OS),Windows_NT)
+LDFLAGS += -lm
+endif
+
 SRC := $(wildcard src/*.c)
 # I honestly thought I was going to need something other than just main.c, that's why there's a src dir
 
