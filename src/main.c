@@ -24,9 +24,9 @@ void print_usage(void)
 		   "  <model-path>    = Path to the model to view.\n"
 		   "Options:\n"
 		   "  -v <vertex-path>   = Path to the vertex shader to use.\n"
-		   "                       If omitted, defaults to shaders/vert_default.glsl.\n"
+		   "                       If omitted defaults to shaders/vert_default.glsl.\n"
 		   "  -f <fragment-path> = Path to the fragment shader to use.\n"
-		   "                       If omitted, defaults to shaders/frag_default.glsl.\n");
+		   "                       If omitted defaults to shaders/frag_default.glsl.\n");
 }
 
 int main(int argc, char** argv)
@@ -57,34 +57,21 @@ int main(int argc, char** argv)
 			return 1;
 		}
 	}
-	uint8_t args_ok = 1;
 	if (!model_path)
 	{
 		fprintf(stderr, "ERROR: model-viewer expects one -m <model> argument!\n");
-		args_ok = 0;
-	}
-	/* if (!vert_path) */
-	/* { */
-	/* 	fprintf(stderr, "ERROR: model-viewer expects one -v <vertex_shader> argument!\n"); */
-	/* 	args_ok = 0; */
-	/* } */
-	/* if (!frag_path) */
-	/* { */
-	/* 	fprintf(stderr, "ERROR: model-viewer expects one -f <fragment_shader> argument!\n"); */
-	/* 	args_ok = 0; */
-	/* } */
-	if (!args_ok) {
 		print_usage();
 		return 1;
 	}
-    InitWindow(1920, 1080, "raylib model viewer");
+	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
+	InitWindow(1920, 1080, "raylib model viewer");
 	// camera
 	Camera camera = { 0 };
-	camera.position = (Vector3){ 6.0f, 2.0f, 6.0f };    // Camera position
-	camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };      // Camera looking at point
-	camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                                // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
+	camera.position = (Vector3){ 6.0f, 2.0f, 6.0f };
+	camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
+	camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+    camera.fovy = 45.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
 	// load model
 	Model model = LoadModel(model_path);
 	if (!IsModelValid(model))
@@ -108,7 +95,7 @@ int main(int argc, char** argv)
 	int cam_loc = GetShaderLocation(shader, "camDir");
 	int light_loc = GetShaderLocation(shader, "lightDir");
 	// "light" setup
-	Vector3 light = { 0.3f, 1.0f, -0.3f };
+	Vector3 light = { -0.3f, 1.0f, 0.3f };
 	normalize(&light);
 	SetShaderValue(shader, light_loc, &light, SHADER_UNIFORM_VEC3);
 	/* light = */
@@ -121,13 +108,23 @@ int main(int argc, char** argv)
 	SetTargetFPS(60);
 	HideCursor();
 	DisableCursor();
+	int camera_mode = CAMERA_FREE;
     while (!WindowShouldClose())
     {
 		float rl_time = GetTime(); // for brick scrolling
-		Vector3 camera_dir = camera.target;
+		Vector3 camera_dir = { // trust, this makes more sense in shaders
+			.x = camera.position.x - camera.target.x,
+			.y = camera.position.y - camera.target.y,
+			.z = camera.position.z - camera.target.z
+		};
+		normalize(&camera_dir);
 		SetShaderValue(shader, time_loc, &rl_time, SHADER_UNIFORM_FLOAT);
 		SetShaderValue(shader, cam_loc, &camera_dir, SHADER_UNIFORM_VEC3);
-		UpdateCamera(&camera, CAMERA_FREE);
+		if (IsKeyPressed(KEY_F))
+		{
+			camera_mode = camera_mode == CAMERA_ORBITAL ? CAMERA_FREE : CAMERA_ORBITAL;
+		}
+		UpdateCamera(&camera, camera_mode);
         BeginDrawing();
 			ClearBackground((Color){40, 40, 60, 255});
 			BeginMode3D(camera);
