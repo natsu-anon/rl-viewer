@@ -19,6 +19,9 @@ void main()
 {
 	float index = floor(numRows * fragTexCoord.y) / numRows;
 	float sinY = sin(PI * numRows * fragTexCoord.y);
+	/* NOTE: I subtract 0.5f from the texture sample because I want bricks to scroll in both directions.
+	 * If I did NOT subtract 0.5f all of the texture values would be in [0, 1], meaning the bricks would only run in one direction.
+	 * Just crank up scrollSpeed if it's a little too slow ezpz */
 	float scrolled = fragTexCoord.x + index * scrollSpeed * rlTime * (texture(noiseTexture, vec2(index, 0.0f)).r - 0.5f);
 	// float sinX = sin(PI * numCols * fragTexCoord.x + offset * PI * step(0.0f, sinY));
 	float sinX = sin(PI * numCols * scrolled + offset * PI * step(0.0f, sinY));
